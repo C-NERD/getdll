@@ -1,4 +1,5 @@
 import datatype, xmltree, segfaults
+from httpclient import newHttpClient, getContent
 from strutils import isEmptyOrWhitespace, strip, parseInt, contains
 from uri import `$`, `/`, parseUri, Uri
 from htmlparser import parseHtml
@@ -108,6 +109,19 @@ iterator parseWinDll*(html : string): Dll =
                     )
                 )
 
+proc getDllFilesLink(html : XmlNode) : Uri =
+
+    for p_tag in html.findAll("p"):
+
+        if p_tag.attr("class") == "backup-link":
+
+            let hyperlink = p_tag.child("a")
+            if hyperlink.isNil():
+
+                continue
+
+            return parseUri(hyperlink.attr("href"))
+
 proc dllLink*(dll: Dll, html, version : string, bit : Bit): DownloadData =
     ## Get dll download link
 
@@ -210,7 +224,8 @@ proc dllLink*(dll: Dll, html, version : string, bit : Bit): DownloadData =
                                                     let url_tag = each.child("a")
                                                     if not url_tag.isNil():
 
-                                                        uri = parseUri(dll.site.domain) / url_tag.attr("href")
+                                                        let url_html = newHttpClient().getContent($(parseUri(dll.site.domain) / url_tag.attr("href")))
+                                                        uri = parseHtml(url_html).getDllFilesLink()
 
                                                     uri
 

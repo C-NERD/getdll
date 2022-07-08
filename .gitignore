@@ -1,3 +1,6 @@
 ## Ignore executables
 getdll
 getdll.exe
+
+## Ignore dll files
+*.dll

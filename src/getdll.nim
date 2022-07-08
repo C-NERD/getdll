@@ -7,7 +7,7 @@ import std/[re, parseopt, sha1], md5
 from os import `/`, dirExists, getCurrentDir, getConfigDir
 from strformat import fmt
 from sequtils import anyIt, filterIt, foldl
-from strutils import contains, split, strip
+from strutils import contains, split, strip, normalize
 from uri import `/`, `$`, isAbsolute, parseUri
 
 #let logger = newFileLogger(open(getConfigDir() / "getdll.log", fmAppend), fmtStr = "$levelname -> ")
@@ -95,7 +95,7 @@ proc getDlls(exe: string): seq[string] =
             return
 
     info(fmt"Scanning {exepath.name} for required dlls")
-    ## Identifies the required and missing dlls for a .exe file
+    ## Identifies the required for a .exe file
     try:
 
         ## Identifies dlls from .exe file
@@ -103,12 +103,12 @@ proc getDlls(exe: string): seq[string] =
         for dll in data.findAll(re"@([A-z]|[0-9]|[-()|])*\.dll"):
 
             let lib = $dll[1..^5]
-            if result.anyIt(it.contains(lib) or lib.contains($it[0..^5])):
+            if result.anyIt((lib.normalize() in it.normalize()) or (($it[0..^5]).normalize() in lib.normalize())):
 
                 continue
             else:
 
-                result.add("{lib}.dll".fmt)
+                result.add(fmt"{lib}.dll")
 
     except RangeDefect:
 
@@ -152,7 +152,7 @@ proc downloadLinks(dll, version : string, bit: Bit) : seq[DownloadData] =
         if link.isNil():
 
             continue
-                
+        
         if link.link.strip.len > 0:
 
             result.add(link)
